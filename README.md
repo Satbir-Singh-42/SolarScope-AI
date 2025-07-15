@@ -16,7 +16,7 @@ SolarScope AI is an AI-powered solar panel analysis platform that leverages Goog
 1. **Installation Planning**: Analyzes rooftop images to recommend optimal solar panel placement
 2. **Fault Detection**: Identifies defects and performance issues in existing solar panel installations
 
-The application is built as a full-stack web application with a React frontend and Express.js backend, designed for deployment on Replit with PostgreSQL database integration.
+The application is built as a full-stack web application with a React frontend and Express.js backend, designed for deployment with PostgreSQL database integration.
 
 ## Features
 
@@ -203,23 +203,7 @@ GOOGLE_API_KEY=your_api_key_here
 - **Development**: Uses memory storage fallback if database is unavailable
 - **Production**: Requires PostgreSQL database for data persistence
 
-## Deployment
 
-### Replit Deployment
-1. Push your code to a Git repository
-2. Import the repository into Replit
-3. Set environment variables in Replit Secrets
-4. The application will automatically start with the configured workflow
-
-### Manual Deployment
-1. Build the application:
-   ```bash
-   npm run build
-   ```
-2. Start the production server:
-   ```bash
-   npm start
-   ```
 
 ## Performance Optimization
 
