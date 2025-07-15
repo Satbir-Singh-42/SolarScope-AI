@@ -204,6 +204,13 @@ GOOGLE_API_KEY=your_api_key_here
 - **Production**: Requires PostgreSQL database for data persistence
 
 
+### 🚀 Deployment
+
+You can deploy SolarScope AI easily using [Render](https://render.com) or any cloud platform that supports Node.js and PostgreSQL.
+- **Build Command**: npm install && npm run build
+- **Pre-Deploy Command**: npm run db:push
+- **Start Command**: node start-production.js
+
 
 ## Performance Optimization
 
