@@ -124,7 +124,7 @@ export async function validateImageForInstallation(file: File): Promise<Validati
       isValid: false,
       type: "error",
       title: "Validation Failed",
-      description: "Unable to validate image due to service issues. Please try again later."
+      description: "Please upload a valid image file or try again later."
     };
   }
 }
