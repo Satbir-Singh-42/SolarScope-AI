@@ -8,7 +8,7 @@ import {
   type InsertAnalysis,
   type ChatMessage,
   type InsertChatMessage,
-} from "@shared/schema";
+} from "../shared/schema";
 import { eq, desc, and, isNull } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";

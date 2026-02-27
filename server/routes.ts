@@ -5,7 +5,7 @@ import path from "path";
 import * as fs from "fs";
 import * as os from "os";
 import { storage } from "./storage";
-import { users, analyses, chatMessages } from "@shared/schema";
+import { users, analyses, chatMessages } from "../shared/schema";
 import { eq } from "drizzle-orm";
 import { analyzeInstallationWithAI, analyzeFaultsWithAI } from "./ai-service";
 import { setupAuth } from "./auth";
