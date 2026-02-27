@@ -8,9 +8,12 @@
  * DO NOT import this file directly — it's only used by the build.
  */
 import express from "express";
-import { registerRoutes } from "../server/routes";
+import dotenv from "dotenv";
+import { registerApiRoutes } from "../server/routes";
 import { initializeDatabase } from "../server/db";
 import { storage } from "../server/storage";
+
+dotenv.config();
 
 const app = express();
 app.use(express.json({ limit: "10mb" }));
@@ -31,7 +34,7 @@ async function ensureInitialized() {
     await storage.waitForConnectionCheck();
   }
 
-  await registerRoutes(app);
+  registerApiRoutes(app);
   initialized = true;
 }
 

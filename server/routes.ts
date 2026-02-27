@@ -138,7 +138,11 @@ const upload = multer({
   },
 });
 
-export async function registerRoutes(app: Express): Promise<Server> {
+/**
+ * Register only the API routes on the Express app.
+ * Used by both local dev server and Vercel serverless function.
+ */
+export function registerApiRoutes(app: Express): void {
   // Setup authentication middleware
   setupAuth(app);
 
@@ -844,6 +848,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+}
+
+/**
+ * Register routes AND create an HTTP server (for local dev only).
+ */
+export async function registerRoutes(app: Express): Promise<Server> {
+  registerApiRoutes(app);
   const httpServer = createServer(app);
   return httpServer;
 }
