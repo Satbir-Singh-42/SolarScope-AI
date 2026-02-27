@@ -3,39 +3,47 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
-    
+
     // Try to parse error as JSON for better error messages
+    let errorMessage = `${res.status}: ${text}`;
     try {
       const errorData = JSON.parse(text);
       const actualError = errorData.error || errorData.message || text;
-      
+
       // Check for specific validation errors and provide clearer messages
-      if (actualError.includes('does not show solar panels') || actualError.includes('solar panels or photovoltaic equipment')) {
-        throw new Error('Please upload a solar panel image for fault detection. Rooftop images should be used for installation analysis instead.');
+      if (
+        actualError.includes("does not show solar panels") ||
+        actualError.includes("solar panels or photovoltaic equipment")
+      ) {
+        errorMessage =
+          "Please upload a solar panel image for fault detection. Rooftop images should be used for installation analysis instead.";
+      } else if (
+        actualError.includes("does not show a rooftop") ||
+        actualError.includes("rooftop suitable for solar panel installation")
+      ) {
+        errorMessage =
+          "Please upload a rooftop or building image for installation analysis. Solar panel images should be used for fault detection instead.";
+      } else {
+        errorMessage = actualError;
       }
-      
-      if (actualError.includes('does not show a rooftop') || actualError.includes('rooftop suitable for solar panel installation')) {
-        throw new Error('Please upload a rooftop or building image for installation analysis. Solar panel images should be used for fault detection instead.');
-      }
-      
-      throw new Error(actualError);
-    } catch (parseError) {
-      // If JSON parsing fails, throw the original error
-      throw new Error(`${res.status}: ${text}`);
+    } catch {
+      // JSON parsing failed — keep the original errorMessage
     }
+
+    throw new Error(errorMessage);
   }
 }
 
 // Health check function to verify backend connectivity
 export async function checkBackendHealth(): Promise<boolean> {
   try {
-    const res = await fetch('/api/health', {
-      method: 'GET',
-      credentials: 'include',
+    const res = await fetch("/api/health", {
+      method: "GET",
+      credentials: "include",
     });
     return res.ok;
   } catch (error) {
-    console.error('Backend health check failed:', error);
+    console.error("Backend health check failed:", error);
     return false;
   }
 }
@@ -70,20 +78,24 @@ export async function apiRequest(
     return res;
   } catch (error) {
     // Enhanced error handling for backend connectivity
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Backend not connected properly. Please check if the server is running.');
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      throw new Error(
+        "Backend not connected properly. Please check if the server is running.",
+      );
     }
-    
-    if (error instanceof Error && error.message.includes('NetworkError')) {
-      throw new Error('Network connection failed. Please check your internet connection and server status.');
+
+    if (error instanceof Error && error.message.includes("NetworkError")) {
+      throw new Error(
+        "Network connection failed. Please check your internet connection and server status.",
+      );
     }
-    
+
     throw error;
   }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
-export const getQueryFn: <T>(options: {
+const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
@@ -106,8 +118,8 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes instead of Infinity
-      cacheTime: 10 * 60 * 1000, // 10 minutes cache
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
       retry: 1, // Allow 1 retry for better reliability
     },
     mutations: {

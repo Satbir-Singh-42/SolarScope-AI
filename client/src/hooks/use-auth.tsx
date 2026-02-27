@@ -1,4 +1,10 @@
-import { createContext, ReactNode, useContext, useState, useEffect } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useState,
+  useEffect,
+} from "react";
 import {
   useQuery,
   useMutation,
@@ -33,12 +39,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkHealth = async () => {
     const status = await checkServerHealth();
     setHealthStatus(status);
-    return status;
   };
 
   useEffect(() => {
     checkHealth();
-    
+
     // Check server health every 30 seconds
     const healthCheckInterval = setInterval(() => {
       checkHealth();
@@ -46,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => clearInterval(healthCheckInterval);
   }, []);
-  
+
   const {
     data: user,
     error,
@@ -117,17 +122,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: () => {
       // Clear all authentication data
       queryClient.setQueryData(["/api/user"], null);
-      
+
       // Clear all cached queries to force fresh data on next login
       queryClient.clear();
-      
+
       // Clear any stored user data from localStorage/sessionStorage
       localStorage.removeItem("authToken");
       sessionStorage.clear();
-      
+
       // Show logout success message in localStorage before redirect
       localStorage.setItem("logoutSuccess", "true");
-      
+
       // Redirect to dashboard instead of reloading
       window.location.href = "/";
     },
@@ -152,8 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         registerMutation,
         healthStatus,
         checkHealth,
-      }}
-    >
+      }}>
       {children}
     </AuthContext.Provider>
   );

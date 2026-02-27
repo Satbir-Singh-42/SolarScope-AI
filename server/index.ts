@@ -1,14 +1,15 @@
-import express, { type Request, Response, NextFunction } from "express";
+import express from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./db";
 import { storage } from "./storage";
 import dotenv from "dotenv";
 
-// Load environment variables
 dotenv.config();
 
-export function createServer() {
+const isProduction = process.env.NODE_ENV === "production";
+
+function createServer() {
   const app = express();
   app.use(express.json());
   app.use(express.urlencoded({ extended: false }));
@@ -43,111 +44,70 @@ export function createServer() {
     next();
   });
 
-
-
   return app;
 }
 
-// For local development - this ensures local dev always works
-if (process.env.NODE_ENV !== "production") {
-  (async () => {
-    // Initialize database connection and check status
-    const isDatabaseConnected = await initializeDatabase();
-    
-    // Wait for hybrid storage to complete its database connection check
-    if ('waitForConnectionCheck' in storage && typeof storage.waitForConnectionCheck === 'function') {
-      await storage.waitForConnectionCheck();
-    }
-    
-    // Check if storage has getStorageStatus method
-    let storageStatus;
-    if ('getStorageStatus' in storage && typeof storage.getStorageStatus === 'function') {
-      storageStatus = storage.getStorageStatus();
-    } else {
-      // Direct DatabaseStorage without getStorageStatus method
-      storageStatus = { type: 'database', available: true };
-    }
-    
-    log(`Database connection: ${isDatabaseConnected ? '✓ Connected' : '✗ Not connected'}`);
-    log(`Storage type: ${storageStatus.type}`);
-    
-    const app = createServer();
-    const server = await registerRoutes(app);
-
-    // importantly only setup vite in development and after
-    // setting up all the other routes so the catch-all route
-    // doesn't interfere with the other routes
-    if (app.get("env") === "development") {
-      await setupVite(app, server);
-    } else {
-      serveStatic(app);
-    }
-
-    // ALWAYS serve the app on port 5000
-    // this serves both the API and the client.
-    // It is the only port that is not firewalled.
-    const port = 5000;
-    const host = "0.0.0.0";
-    const canReuse = process.platform !== "win32"; // true on Linux/macOS
-
-    server.listen(
-      {
-        port,
-        host,
-        ...(canReuse ? { reusePort: true } : {}),
-      },
-      () => {
-        log(`serving on http://${host}:${port}`);
-      }
-    );
-  })();
-}
-
-// Export for production use
-export async function startProductionServer() {
-  // Initialize database connection and check status
+async function initializeStorage() {
   const isDatabaseConnected = await initializeDatabase();
-  
-  // Wait for hybrid storage to complete its database connection check
-  if ('waitForConnectionCheck' in storage && typeof storage.waitForConnectionCheck === 'function') {
+
+  if (
+    "waitForConnectionCheck" in storage &&
+    typeof storage.waitForConnectionCheck === "function"
+  ) {
     await storage.waitForConnectionCheck();
   }
-  
-  // Check if storage has getStorageStatus method
+
   let storageStatus;
-  if ('getStorageStatus' in storage && typeof storage.getStorageStatus === 'function') {
+  if (
+    "getStorageStatus" in storage &&
+    typeof storage.getStorageStatus === "function"
+  ) {
     storageStatus = storage.getStorageStatus();
   } else {
-    // Direct DatabaseStorage without getStorageStatus method
-    storageStatus = { type: 'database', available: true };
+    storageStatus = { type: "database", available: true };
   }
-  
-  console.log(`Database connection: ${isDatabaseConnected ? '✓ Connected' : '✗ Not connected'}`);
-  console.log(`Storage type: ${storageStatus.type}`);
-  
+
+  log(
+    `Database connection: ${isDatabaseConnected ? "✓ Connected" : "✗ Not connected"}`,
+  );
+  log(`Storage type: ${storageStatus.type}`);
+}
+
+async function startServer() {
+  // Validate required env vars in production
+  if (isProduction) {
+    const required = ["DATABASE_URL", "GOOGLE_API_KEY"];
+    const missing = required.filter((v) => !process.env[v]);
+    if (missing.length > 0) {
+      console.error(
+        `Missing required environment variables: ${missing.join(", ")}`,
+      );
+      process.exit(1);
+    }
+  }
+
+  await initializeStorage();
+
   const app = createServer();
-  
-  // Register API routes first
   const server = await registerRoutes(app);
-  
-  // Setup static file serving for production
-  serveStatic(app);
-  
-  const port = process.env.PORT || 10000;
-  const host = '0.0.0.0';
-  
+
+  if (!isProduction) {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+
+  const port = Number(process.env.PORT) || 5000;
+  const host = "0.0.0.0";
+
   server.listen(port, host, () => {
-    console.log(`🚀 SolarScope AI server running on port ${port}`);
-    console.log(`🌐 Health check available at: http://${host}:${port}/api/health`);
+    log(`serving on http://${host}:${port}`);
   });
-  
+
   return server;
 }
 
-// Run production server if this file is executed directly
-if (process.env.NODE_ENV === 'production' && import.meta.url === `file://${process.argv[1]}`) {
-  startProductionServer().catch((error) => {
-    console.error('❌ Failed to start production server:', error);
-    process.exit(1);
-  });
-}
+startServer().catch((error) => {
+  console.error("Failed to start server:", error);
+  process.exit(1);
+});

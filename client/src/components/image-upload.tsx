@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { CloudUpload, X, Zap } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import ValidationCard from "./validation-card";
-import { LazyLoading } from "./ui/lazy-loading";
 import {
   validateImageForInstallation,
   validateImageForFaultDetection,
@@ -39,7 +38,7 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
       description,
       validationType,
     }: ImageUploadProps,
-    ref
+    ref,
   ) => {
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
@@ -126,7 +125,7 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
           }
         }
       },
-      [onUpload, validationType, preview]
+      [onUpload, validationType, preview],
     );
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -290,7 +289,7 @@ const ImageUpload = forwardRef<ImageUploadRef, ImageUploadProps>(
         </Card>
       </>
     );
-  }
+  },
 );
 
 ImageUpload.displayName = "ImageUpload";

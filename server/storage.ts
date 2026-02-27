@@ -1,7 +1,15 @@
-import { analyses, users, chatMessages, type User, type InsertUser, type Analysis, type InsertAnalysis, type ChatMessage, type InsertChatMessage } from "@shared/schema";
-import { eq, desc, count, ne, and } from "drizzle-orm";
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import {
+  analyses,
+  users,
+  chatMessages,
+  type User,
+  type InsertUser,
+  type Analysis,
+  type InsertAnalysis,
+  type ChatMessage,
+  type InsertChatMessage,
+} from "@shared/schema";
+import { eq, desc, and, isNull } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import connectPg from "connect-pg-simple";
@@ -9,11 +17,6 @@ import { config } from "dotenv";
 
 // Load environment variables before storage initialization
 config();
-
-function getDatabaseUrl(): string | null {
-  // Use DATABASE_URL environment variable directly
-  return process.env.DATABASE_URL || null;
-}
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -27,7 +30,10 @@ export interface IStorage {
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   getChatMessages(limit?: number): Promise<ChatMessage[]>;
   getChatMessagesByUser(userId: number, limit?: number): Promise<ChatMessage[]>;
-  getChatMessagesBySession(sessionId: string, limit?: number): Promise<ChatMessage[]>;
+  getChatMessagesBySession(
+    sessionId: string,
+    limit?: number,
+  ): Promise<ChatMessage[]>;
   clearSessionData(sessionId: string): Promise<void>;
   clearAllUsersExceptTesting(): Promise<void>;
   sessionStore: any;
@@ -49,35 +55,12 @@ export class MemStorage implements IStorage {
     this.currentUserId = 1;
     this.currentAnalysisId = 1;
     this.currentChatMessageId = 1;
-    
+
     // Initialize memory session store
     const MemoryStore = createMemoryStore(session);
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // 24 hours
     });
-    
-    // Start with empty chat for authentic user experience
-    this.addTestingUser();
-  }
-
-  private async addTestingUser() {
-    // Add a testing user for development
-    const { hashPassword } = await import("./auth");
-    const hashedPassword = await hashPassword("password123");
-    
-    const testUser: User = {
-      id: 1,
-      username: 'test_user',
-      email: 'test@example.com',
-      password: hashedPassword,
-      createdAt: new Date()
-    };
-    this.users.set(testUser.id, testUser);
-    this.currentUserId = 2; // Next user will get ID 2
-  }
-
-  private addInitialChatMessages() {
-    // No fake messages - chat starts empty for authentic user experience
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -91,9 +74,7 @@ export class MemStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email === email,
-    );
+    return Array.from(this.users.values()).find((user) => user.email === email);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -105,19 +86,23 @@ export class MemStorage implements IStorage {
 
   async createAnalysis(insertAnalysis: InsertAnalysis): Promise<Analysis> {
     const id = this.currentAnalysisId++;
-    
+
     // Get the next sequence number for this user and type
     let nextSequenceNumber = 1;
     if (insertAnalysis.userId) {
       const userAnalyses = Array.from(this.analyses.values())
-        .filter(a => a.userId === insertAnalysis.userId && a.type === insertAnalysis.type)
+        .filter(
+          (a) =>
+            a.userId === insertAnalysis.userId &&
+            a.type === insertAnalysis.type,
+        )
         .sort((a, b) => b.userSequenceNumber - a.userSequenceNumber);
-      
+
       if (userAnalyses.length > 0) {
         nextSequenceNumber = userAnalyses[0].userSequenceNumber + 1;
       }
     }
-    
+
     const analysis: Analysis = {
       ...insertAnalysis,
       id,
@@ -148,7 +133,9 @@ export class MemStorage implements IStorage {
     return this.analyses.get(id);
   }
 
-  async createChatMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
+  async createChatMessage(
+    insertMessage: InsertChatMessage,
+  ): Promise<ChatMessage> {
     const id = this.currentChatMessageId++;
     const message: ChatMessage = {
       ...insertMessage,
@@ -157,34 +144,41 @@ export class MemStorage implements IStorage {
       userId: insertMessage.userId ?? null,
       sessionId: insertMessage.sessionId ?? null,
       category: insertMessage.category ?? null,
-      type: insertMessage.type || 'user',
+      type: insertMessage.type || "user",
     };
     this.chatMessages.set(id, message);
     return message;
   }
 
   async getChatMessages(limit: number = 50): Promise<ChatMessage[]> {
-    const messages = Array.from(this.chatMessages.values())
-      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-    
+    const messages = Array.from(this.chatMessages.values()).sort(
+      (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+    );
+
     // Return the most recent messages up to the limit
     return messages.slice(-limit);
   }
 
-  async getChatMessagesByUser(userId: number, limit: number = 50): Promise<ChatMessage[]> {
+  async getChatMessagesByUser(
+    userId: number,
+    limit: number = 50,
+  ): Promise<ChatMessage[]> {
     const userMessages = Array.from(this.chatMessages.values())
-      .filter(msg => msg.userId === userId)
+      .filter((msg) => msg.userId === userId)
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-    
+
     // Return the most recent user messages up to the limit
     return userMessages.slice(-limit);
   }
 
-  async getChatMessagesBySession(sessionId: string, limit: number = 50): Promise<ChatMessage[]> {
+  async getChatMessagesBySession(
+    sessionId: string,
+    limit: number = 50,
+  ): Promise<ChatMessage[]> {
     const sessionMessages = Array.from(this.chatMessages.values())
-      .filter(msg => msg.sessionId === sessionId)
+      .filter((msg) => msg.sessionId === sessionId)
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-    
+
     // Return the most recent session messages up to the limit
     return sessionMessages.slice(-limit);
   }
@@ -196,8 +190,8 @@ export class MemStorage implements IStorage {
         this.analyses.delete(id);
       }
     }
-    
-    // Remove chat messages for this session  
+
+    // Remove chat messages for this session
     for (const [id, message] of this.chatMessages.entries()) {
       if (message.sessionId === sessionId) {
         this.chatMessages.delete(id);
@@ -206,15 +200,9 @@ export class MemStorage implements IStorage {
   }
 
   async clearAllUsersExceptTesting(): Promise<void> {
-    // Keep only the testing user (ID: 1)
-    const testUser = this.users.get(1);
     this.users.clear();
-    if (testUser) {
-      this.users.set(1, testUser);
-    }
-    // Reset user ID counter to 2
-    this.currentUserId = 2;
-    
+    this.currentUserId = 1;
+
     // Also clear all analyses and chat messages to start fresh
     this.analyses.clear();
     this.chatMessages.clear();
@@ -223,10 +211,10 @@ export class MemStorage implements IStorage {
   }
 
   // Helper method to get current storage status
-  getStorageStatus(): { type: 'database' | 'memory'; available: boolean } {
+  getStorageStatus(): { type: "database" | "memory"; available: boolean } {
     return {
-      type: 'memory',
-      available: true
+      type: "memory",
+      available: true,
     };
   }
 }
@@ -237,79 +225,41 @@ export class DatabaseStorage implements IStorage {
   constructor() {
     // Initialize session store after database connection
     this.initializeSessionStore();
-    
-    // Create testing user on initialization
-    this.addTestingUser().catch(console.error);
   }
 
   private async initializeSessionStore() {
     try {
       const { pool } = await import("./db");
-      
+
       if (pool) {
         const PostgresSessionStore = connectPg(session);
         this.sessionStore = new PostgresSessionStore({
           pool: pool,
           createTableIfMissing: true,
-          tableName: 'session'
+          tableName: "session",
         });
-        console.log('PostgreSQL session store initialized');
+        console.log("PostgreSQL session store initialized");
       } else {
         // Fallback to memory store if database not available
-        const MemoryStore = await import("memorystore").then(m => m.default);
-        this.sessionStore = new MemoryStore(session)({
+        const MemoryStore = await import("memorystore").then((m) => m.default);
+        this.sessionStore = new (MemoryStore(session) as any)({
           checkPeriod: 86400000, // 24 hours
         });
-        console.log('Memory session store initialized (fallback)');
+        console.log("Memory session store initialized (fallback)");
       }
     } catch (error) {
-      console.warn('Session store initialization failed, using memory fallback:', error);
-      const MemoryStore = await import("memorystore").then(m => m.default);
-      this.sessionStore = new MemoryStore(session)({
+      console.warn(
+        "Session store initialization failed, using memory fallback:",
+        error,
+      );
+      const MemoryStore = await import("memorystore").then((m) => m.default);
+      this.sessionStore = new (MemoryStore(session) as any)({
         checkPeriod: 86400000, // 24 hours
       });
     }
   }
 
-  private async addTestingUser() {
-    try {
-      const db = await this.getDb();
-      
-      // Check if testing user already exists
-      const existingUser = await this.getUserByEmail("test@example.com");
-      if (existingUser) {
-        console.log('Testing user already exists in database');
-        return;
-      }
-
-      // Create testing user with hashed password using the same method as auth.ts
-      const { scrypt, randomBytes } = await import("crypto");
-      const { promisify } = await import("util");
-      const scryptAsync = promisify(scrypt);
-      
-      const salt = randomBytes(16).toString("hex");
-      const buf = (await scryptAsync("password123", salt, 64)) as Buffer;
-      const hashedPassword = `${buf.toString("hex")}.${salt}`;
-      
-      const testUser: InsertUser = {
-        username: "test_user",
-        email: "test@example.com",
-        password: hashedPassword,
-      };
-
-      await this.createUser(testUser);
-      console.log('Testing user created in database: test@example.com / password123');
-    } catch (error) {
-      console.warn('Failed to create testing user:', error);
-    }
-  }
-
-  private async getPool() {
-    const { pool } = await import("./db");
-    return pool;
-  }
-
-  private async getDb() {
+  async getDb() {
     const { db } = await import("./db");
     if (!db) {
       throw new Error("Database connection not available");
@@ -325,7 +275,10 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     const db = await this.getDb();
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
     return user || undefined;
   }
 
@@ -337,35 +290,37 @@ export class DatabaseStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const db = await this.getDb();
-    const [user] = await db
-      .insert(users)
-      .values(insertUser)
-      .returning();
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async createAnalysis(insertAnalysis: InsertAnalysis): Promise<Analysis> {
     const db = await this.getDb();
-    
+
     // Calculate the next sequence number for this user and type
     let nextSequenceNumber = 1;
     if (insertAnalysis.userId) {
       const userAnalyses = await db
         .select()
         .from(analyses)
-        .where(and(eq(analyses.userId, insertAnalysis.userId), eq(analyses.type, insertAnalysis.type)))
+        .where(
+          and(
+            eq(analyses.userId, insertAnalysis.userId),
+            eq(analyses.type, insertAnalysis.type),
+          ),
+        )
         .orderBy(desc(analyses.userSequenceNumber));
-      
+
       if (userAnalyses.length > 0) {
         nextSequenceNumber = userAnalyses[0].userSequenceNumber + 1;
       }
     }
-    
+
     const analysisData = {
       ...insertAnalysis,
       userSequenceNumber: nextSequenceNumber,
     };
-    
+
     const [analysis] = await db
       .insert(analyses)
       .values(analysisData)
@@ -382,7 +337,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(analyses.userId, userId))
         .orderBy(desc(analyses.createdAt));
     } catch (error) {
-      console.error('Database getAnalysesByUser error:', error);
+      console.error("Database getAnalysesByUser error:", error);
       throw error;
     }
   }
@@ -398,21 +353,26 @@ export class DatabaseStorage implements IStorage {
 
   async getAnalysis(id: number): Promise<Analysis | undefined> {
     const db = await this.getDb();
-    const [analysis] = await db.select().from(analyses).where(eq(analyses.id, id));
+    const [analysis] = await db
+      .select()
+      .from(analyses)
+      .where(eq(analyses.id, id));
     return analysis || undefined;
   }
 
-  async createChatMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
+  async createChatMessage(
+    insertMessage: InsertChatMessage,
+  ): Promise<ChatMessage> {
     const db = await this.getDb();
     try {
       const [message] = await db
         .insert(chatMessages)
         .values(insertMessage)
         .returning();
-      console.log('Database insert successful, message ID:', message.id);
+      console.log("Database insert successful, message ID:", message.id);
       return message;
     } catch (error) {
-      console.error('Database insert failed:', error);
+      console.error("Database insert failed:", error);
       throw error;
     }
   }
@@ -422,12 +382,15 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(chatMessages)
-      .where(eq(chatMessages.userId, null))
+      .where(isNull(chatMessages.userId))
       .orderBy(desc(chatMessages.createdAt))
       .limit(limit);
   }
 
-  async getChatMessagesByUser(userId: number, limit: number = 50): Promise<ChatMessage[]> {
+  async getChatMessagesByUser(
+    userId: number,
+    limit: number = 50,
+  ): Promise<ChatMessage[]> {
     const db = await this.getDb();
     return await db
       .select()
@@ -437,7 +400,10 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
   }
 
-  async getChatMessagesBySession(sessionId: string, limit: number = 50): Promise<ChatMessage[]> {
+  async getChatMessagesBySession(
+    sessionId: string,
+    limit: number = 50,
+  ): Promise<ChatMessage[]> {
     const db = await this.getDb();
     return await db
       .select()
@@ -457,21 +423,16 @@ export class DatabaseStorage implements IStorage {
 
   async clearAllUsersExceptTesting(): Promise<void> {
     const db = await this.getDb();
-    // Delete all users (including testing user to recreate with proper password hash)
     await db.delete(users);
-    // Clear all analyses and chat messages
     await db.delete(analyses);
     await db.delete(chatMessages);
-    
-    // Recreate testing user with proper scrypt password hash
-    await this.addTestingUser();
   }
 
   // Helper method to get current storage status
-  getStorageStatus(): { type: 'database' | 'memory'; available: boolean } {
+  getStorageStatus(): { type: "database" | "memory"; available: boolean } {
     return {
-      type: this.isDatabaseAvailable ? 'database' : 'memory',
-      available: this.isDatabaseAvailable
+      type: "database",
+      available: true,
     };
   }
 }
@@ -486,7 +447,7 @@ class HybridStorage implements IStorage {
 
   constructor() {
     this.memoryStorage = new MemStorage();
-    
+
     // Only initialize database storage if we have a proper connection
     // This will be determined by the db.ts initialization
     this.databaseStorage = new DatabaseStorage();
@@ -501,26 +462,31 @@ class HybridStorage implements IStorage {
 
   private async checkDatabaseConnection(): Promise<void> {
     if (!this.databaseStorage) return;
-    
+
     try {
       // Wait for database initialization to complete
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
       // Test database connection with timeout
       const connectionTest = Promise.race([
-        this.databaseStorage.getDb().then(db => db.execute('SELECT 1')),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 5000))
+        this.databaseStorage.getDb().then((db) => db.execute("SELECT 1")),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Connection timeout")), 5000),
+        ),
       ]);
-      
+
       await connectionTest;
-      
+
       this.isDatabaseAvailable = true;
-      console.log('✓ Database connection verified - using PostgreSQL storage');
-      
+      console.log("✓ Database connection verified - using PostgreSQL storage");
+
       // Switch to database session store
       this.sessionStore = this.databaseStorage.sessionStore;
     } catch (error) {
-      console.warn('Database connection failed, using memory storage:', error instanceof Error ? error.message : 'Unknown error');
+      console.warn(
+        "Database connection failed, using memory storage:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
       this.isDatabaseAvailable = false;
       this.databaseStorage = null; // Clear failed connection
     }
@@ -531,7 +497,7 @@ class HybridStorage implements IStorage {
       try {
         return await this.databaseStorage.getUser(id);
       } catch (error) {
-        console.warn('Database getUser failed, falling back to memory:', error);
+        console.warn("Database getUser failed, falling back to memory:", error);
         this.isDatabaseAvailable = false;
       }
     }
@@ -543,7 +509,10 @@ class HybridStorage implements IStorage {
       try {
         return await this.databaseStorage.getUserByUsername(username);
       } catch (error) {
-        console.warn('Database getUserByUsername failed, falling back to memory:', error);
+        console.warn(
+          "Database getUserByUsername failed, falling back to memory:",
+          error,
+        );
         this.isDatabaseAvailable = false;
       }
     }
@@ -555,7 +524,10 @@ class HybridStorage implements IStorage {
       try {
         return await this.databaseStorage.getUserByEmail(email);
       } catch (error) {
-        console.warn('Database getUserByEmail failed, falling back to memory:', error);
+        console.warn(
+          "Database getUserByEmail failed, falling back to memory:",
+          error,
+        );
         this.isDatabaseAvailable = false;
       }
     }
@@ -567,7 +539,10 @@ class HybridStorage implements IStorage {
       try {
         return await this.databaseStorage.createUser(user);
       } catch (error) {
-        console.warn('Database createUser failed, falling back to memory:', error);
+        console.warn(
+          "Database createUser failed, falling back to memory:",
+          error,
+        );
         this.isDatabaseAvailable = false;
       }
     }
@@ -579,7 +554,10 @@ class HybridStorage implements IStorage {
       try {
         return await this.databaseStorage.createAnalysis(analysis);
       } catch (error) {
-        console.warn('Database createAnalysis failed, falling back to memory:', error);
+        console.warn(
+          "Database createAnalysis failed, falling back to memory:",
+          error,
+        );
         this.isDatabaseAvailable = false;
       }
     }
@@ -591,7 +569,10 @@ class HybridStorage implements IStorage {
       try {
         return await this.databaseStorage.getAnalysesByUser(userId);
       } catch (error) {
-        console.warn('Database getAnalysesByUser failed, falling back to memory:', error);
+        console.warn(
+          "Database getAnalysesByUser failed, falling back to memory:",
+          error,
+        );
         this.isDatabaseAvailable = false;
       }
     }
@@ -603,7 +584,10 @@ class HybridStorage implements IStorage {
       try {
         return await this.databaseStorage.getAnalysis(id);
       } catch (error) {
-        console.warn('Database getAnalysis failed, falling back to memory:', error);
+        console.warn(
+          "Database getAnalysis failed, falling back to memory:",
+          error,
+        );
         this.isDatabaseAvailable = false;
       }
     }
@@ -615,7 +599,10 @@ class HybridStorage implements IStorage {
       try {
         return await this.databaseStorage.createChatMessage(message);
       } catch (error) {
-        console.warn('Database createChatMessage failed, falling back to memory:', error);
+        console.warn(
+          "Database createChatMessage failed, falling back to memory:",
+          error,
+        );
         this.isDatabaseAvailable = false;
       }
     }
@@ -627,19 +614,28 @@ class HybridStorage implements IStorage {
       try {
         return await this.databaseStorage.getChatMessages(limit);
       } catch (error) {
-        console.warn('Database getChatMessages failed, falling back to memory:', error);
+        console.warn(
+          "Database getChatMessages failed, falling back to memory:",
+          error,
+        );
         this.isDatabaseAvailable = false;
       }
     }
     return await this.memoryStorage.getChatMessages(limit);
   }
 
-  async getChatMessagesByUser(userId: number, limit: number = 50): Promise<ChatMessage[]> {
+  async getChatMessagesByUser(
+    userId: number,
+    limit: number = 50,
+  ): Promise<ChatMessage[]> {
     if (this.isDatabaseAvailable && this.databaseStorage) {
       try {
         return await this.databaseStorage.getChatMessagesByUser(userId, limit);
       } catch (error) {
-        console.warn('Database getChatMessagesByUser failed, falling back to memory:', error);
+        console.warn(
+          "Database getChatMessagesByUser failed, falling back to memory:",
+          error,
+        );
         this.isDatabaseAvailable = false;
       }
     }
@@ -651,19 +647,31 @@ class HybridStorage implements IStorage {
       try {
         return await this.databaseStorage.getAnalysesBySession(sessionId);
       } catch (error) {
-        console.warn('Database getAnalysesBySession failed, falling back to memory:', error);
+        console.warn(
+          "Database getAnalysesBySession failed, falling back to memory:",
+          error,
+        );
         this.isDatabaseAvailable = false;
       }
     }
     return await this.memoryStorage.getAnalysesBySession(sessionId);
   }
 
-  async getChatMessagesBySession(sessionId: string, limit: number = 50): Promise<ChatMessage[]> {
+  async getChatMessagesBySession(
+    sessionId: string,
+    limit: number = 50,
+  ): Promise<ChatMessage[]> {
     if (this.isDatabaseAvailable && this.databaseStorage) {
       try {
-        return await this.databaseStorage.getChatMessagesBySession(sessionId, limit);
+        return await this.databaseStorage.getChatMessagesBySession(
+          sessionId,
+          limit,
+        );
       } catch (error) {
-        console.warn('Database getChatMessagesBySession failed, falling back to memory:', error);
+        console.warn(
+          "Database getChatMessagesBySession failed, falling back to memory:",
+          error,
+        );
         this.isDatabaseAvailable = false;
       }
     }
@@ -676,7 +684,10 @@ class HybridStorage implements IStorage {
         await this.databaseStorage.clearSessionData(sessionId);
         return;
       } catch (error) {
-        console.warn('Database clearSessionData failed, falling back to memory:', error);
+        console.warn(
+          "Database clearSessionData failed, falling back to memory:",
+          error,
+        );
         this.isDatabaseAvailable = false;
       }
     }
@@ -689,7 +700,10 @@ class HybridStorage implements IStorage {
         await this.databaseStorage.clearAllUsersExceptTesting();
         return;
       } catch (error) {
-        console.warn('Database clearAllUsersExceptTesting failed, falling back to memory:', error);
+        console.warn(
+          "Database clearAllUsersExceptTesting failed, falling back to memory:",
+          error,
+        );
         this.isDatabaseAvailable = false;
       }
     }
@@ -697,22 +711,24 @@ class HybridStorage implements IStorage {
   }
 
   // Helper method to get current storage status
-  getStorageStatus(): { type: 'database' | 'memory'; available: boolean } {
+  getStorageStatus(): { type: "database" | "memory"; available: boolean } {
     return {
-      type: this.isDatabaseAvailable ? 'database' : 'memory',
-      available: true
+      type: this.isDatabaseAvailable ? "database" : "memory",
+      available: true,
     };
   }
 }
 
 // Storage initialization with hybrid fallback
 export const storage = (() => {
-  const databaseUrl = getDatabaseUrl();
+  const databaseUrl = process.env.DATABASE_URL;
   if (databaseUrl) {
-    console.log('✓ DATABASE_URL found - using hybrid storage with PostgreSQL fallback');
+    console.log(
+      "✓ DATABASE_URL found - using hybrid storage with PostgreSQL fallback",
+    );
     return new HybridStorage();
   }
-  
-  console.log('Using memory storage for development');
+
+  console.log("Using memory storage for development");
   return new MemStorage();
 })();

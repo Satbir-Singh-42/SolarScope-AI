@@ -30,8 +30,6 @@
   --text-primary: hsl(0, 0%, 13%);
   --text-secondary: hsl(0, 0%, 46%);
   --surface: hsl(0, 0%, 98%);
-  --primary-custom: hsl(207, 90%, 54%);
-  --secondary-custom: hsl(0, 0%, 46%);
   --gray-50: hsl(210, 20%, 98%);
   --gray-100: hsl(220, 14%, 96%);
   --gray-200: hsl(220, 13%, 91%);
@@ -65,21 +63,24 @@
   .chat-container {
     height: 100vh;
     height: 100svh; /* Use small viewport height on supported browsers */
-    height: var(--viewport-height, 100vh); /* Use dynamic height when keyboard is visible */
+    height: var(
+      --viewport-height,
+      100vh
+    ); /* Use dynamic height when keyboard is visible */
   }
-  
+
   .keyboard-aware {
     position: fixed;
     bottom: 0;
     width: 100%;
   }
-  
+
   /* Ensure proper spacing when keyboard is open */
   .mobile-keyboard-open .chat-container {
     height: calc(100vh - 300px);
     min-height: 300px;
   }
-  
+
   /* Fixed positioning improvements */
   .mobile-fixed-bottom {
     position: fixed;
@@ -90,7 +91,7 @@
     transform: translateY(0);
     transition: transform 0.3s ease;
   }
-  
+
   /* Improved keyboard detection */
   @supports (height: 100dvh) {
     .chat-container {
@@ -98,13 +99,13 @@
       max-height: 100dvh;
     }
   }
-  
+
   /* Visual Viewport API support */
   .visual-viewport-supported .chat-container {
     height: var(--viewport-height, 100vh);
     max-height: var(--viewport-height, 100vh);
   }
-  
+
   /* When keyboard is visible, use dynamic viewport height */
   .mobile-keyboard-active .chat-container {
     height: var(--viewport-height);
@@ -121,11 +122,15 @@
 }
 
 .shadow-material {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .shadow-material:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.2s ease-in-out;
 }
 
@@ -249,13 +254,15 @@
 }
 
 /* Hide main page scrollbar */
-body, html {
+body,
+html {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
   overflow-x: hidden;
 }
 
-body::-webkit-scrollbar, html::-webkit-scrollbar {
+body::-webkit-scrollbar,
+html::-webkit-scrollbar {
   display: none; /* Chrome, Safari, and Opera */
 }
 
@@ -318,7 +325,8 @@ body::-webkit-scrollbar, html::-webkit-scrollbar {
 }
 
 .slide-down-bounce {
-  animation: slideDownBounce 0.9s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  animation: slideDownBounce 0.9s cubic-bezier(0.68, -0.55, 0.265, 1.55)
+    forwards;
 }
 
 .slide-down-grow {
@@ -330,12 +338,24 @@ body::-webkit-scrollbar, html::-webkit-scrollbar {
 }
 
 /* Stagger delays for multiple elements */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-.stagger-5 { animation-delay: 0.5s; }
-.stagger-6 { animation-delay: 0.6s; }
+.stagger-1 {
+  animation-delay: 0.1s;
+}
+.stagger-2 {
+  animation-delay: 0.2s;
+}
+.stagger-3 {
+  animation-delay: 0.3s;
+}
+.stagger-4 {
+  animation-delay: 0.4s;
+}
+.stagger-5 {
+  animation-delay: 0.5s;
+}
+.stagger-6 {
+  animation-delay: 0.6s;
+}
 
 /* Progress bar animation */
 @keyframes progressFill {
@@ -395,21 +415,25 @@ body::-webkit-scrollbar, html::-webkit-scrollbar {
   .text-primary-custom {
     color: var(--text-primary);
   }
-  
+
   .text-secondary-custom {
     color: var(--text-secondary);
   }
-  
+
   .bg-surface {
     background-color: var(--surface);
   }
-  
+
   .shadow-material {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.1);
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.1),
+      0 8px 16px rgba(0, 0, 0, 0.1);
   }
-  
+
   .shadow-material-lg {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.12), 0 12px 24px rgba(0,0,0,0.15);
+    box-shadow:
+      0 4px 8px rgba(0, 0, 0, 0.12),
+      0 12px 24px rgba(0, 0, 0, 0.15);
   }
 }
 

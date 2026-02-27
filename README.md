@@ -13,6 +13,7 @@ Professional full-stack web application leveraging Google Gemini AI for comprehe
 ## 🌟 Overview
 
 SolarScope AI is an AI-powered solar panel analysis platform that leverages Google Gemini AI to provide two main services:
+
 1. **Installation Planning**: Analyzes rooftop images to recommend optimal solar panel placement
 2. **Fault Detection**: Identifies defects and performance issues in existing solar panel installations
 
@@ -21,24 +22,28 @@ The application is built as a full-stack web application with a React frontend a
 ## Features
 
 ### 🔍 Installation Planning
+
 - **AI-Powered Roof Analysis**: Analyze rooftop images to determine optimal solar panel placement
 - **Dynamic Calculations**: Real-time calculations for coverage, power output, and efficiency
 - **Market-Standard Metrics**: Accurate calculations using industry-standard panel specifications
 - **Professional PDF Reports**: Generate detailed installation reports with technical specifications
 
 ### 🛠️ Fault Detection
+
 - **Advanced Defect Recognition**: Detect cracks, delamination, hot spots, and other panel defects
 - **Severity Classification**: Categorize issues by severity (Critical, High, Medium, Low)
 - **AI-Generated Recommendations**: Specific maintenance plans based on detected faults
 - **Comprehensive Reporting**: Detailed fault analysis with professional PDF exports
 
 ### 💬 AI Chat Assistant
+
 - **Real-time Solar Expertise**: Get instant answers about solar technology and best practices
 - **Context-Aware Responses**: Intelligent responses based on your analysis history
 - **Professional Formatting**: Clean, formatted responses with technical accuracy
 - **Persistent Chat History**: Conversations saved during your session
 
 ### 👤 User Authentication
+
 - **Optional Authentication**: Use the platform without registration or create an account for enhanced features
 - **Secure Data Storage**: Password hashing with bcrypt and secure session management
 - **Personal Analysis History**: Save and review your past analyses (authenticated users only)
@@ -47,6 +52,7 @@ The application is built as a full-stack web application with a React frontend a
 ## Technology Stack
 
 ### Frontend
+
 - **React 18** - Modern UI framework with hooks and functional components
 - **TypeScript** - Type-safe development with enhanced IDE support
 - **Vite** - Fast build tool and development server
@@ -58,6 +64,7 @@ The application is built as a full-stack web application with a React frontend a
 - **Framer Motion** - Smooth animations and transitions
 
 ### Backend
+
 - **Node.js** - Server-side JavaScript runtime
 - **Express.js** - Web application framework
 - **TypeScript** - Type-safe server development
@@ -69,6 +76,7 @@ The application is built as a full-stack web application with a React frontend a
 - **bcrypt** - Password hashing and security
 
 ### Development Tools
+
 - **ESBuild** - Fast JavaScript bundler
 - **Drizzle Kit** - Database migration and schema management
 - **Cross-env** - Cross-platform environment variable management
@@ -77,12 +85,14 @@ The application is built as a full-stack web application with a React frontend a
 ## Architecture
 
 ### Client-Server Separation
+
 - **Frontend**: React SPA with Vite dev server
 - **Backend**: Express.js API server with REST endpoints
 - **Database**: PostgreSQL with Drizzle ORM
 - **AI Integration**: Google Gemini AI for image analysis and chat
 
 ### Security Features
+
 - **Password Hashing**: bcrypt for secure password storage
 - **Session Management**: Express-session with PostgreSQL store
 - **Input Validation**: Zod schemas for request validation
@@ -90,6 +100,7 @@ The application is built as a full-stack web application with a React frontend a
 - **CORS Protection**: Configured for secure cross-origin requests
 
 ### Database Design
+
 - **Users Table**: User authentication and profile data
 - **Analyses Table**: Solar panel analysis results with user association
 - **Chat Messages Table**: AI chat history with user and session tracking
@@ -98,6 +109,7 @@ The application is built as a full-stack web application with a React frontend a
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18 or higher
 - PostgreSQL database
 - Google Gemini AI API key
@@ -105,18 +117,21 @@ The application is built as a full-stack web application with a React frontend a
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd solarscope-ai
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Environment Setup**
    Create a `.env` file in the root directory:
+
    ```env
    NODE_ENV=development
    DATABASE_URL=postgresql://username:password@host:port/database
@@ -124,6 +139,7 @@ The application is built as a full-stack web application with a React frontend a
    ```
 
 4. **Database Setup**
+
    ```bash
    npm run db:push
    ```
@@ -138,12 +154,14 @@ The application will be available at `http://localhost:5000`
 ### API Endpoints
 
 #### Authentication
+
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/login` - User login
 - `POST /api/auth/logout` - User logout
 - `GET /api/user` - Get current user info
 
 #### Analysis
+
 - `POST /api/validate-image` - Validate image content
 - `POST /api/analyze/installation` - Analyze rooftop for installation planning
 - `POST /api/analyze/fault-detection` - Detect faults in solar panels
@@ -151,11 +169,13 @@ The application will be available at `http://localhost:5000`
 - `GET /api/analyses/session` - Get session-based analyses
 
 #### AI Chat
+
 - `POST /api/ai/chat` - Send message to AI assistant
 - `GET /api/chat/messages` - Get chat history
 - `POST /api/chat/clear` - Clear chat history
 
 #### System
+
 - `GET /api/health` - System health check
 - `POST /api/clear-users` - Clear user data (development only)
 
@@ -186,6 +206,7 @@ solarscope-ai/
 ## Configuration
 
 ### Database Configuration
+
 The application uses PostgreSQL with Drizzle ORM. Configure your database connection in the `.env` file:
 
 ```env
@@ -193,6 +214,7 @@ DATABASE_URL=postgresql://username:password@host:port/database
 ```
 
 ### AI Configuration
+
 Get your Google Gemini API key from [Google AI Studio](https://aistudio.google.com/) and add it to your `.env` file:
 
 ```env
@@ -200,31 +222,53 @@ GOOGLE_API_KEY=your_api_key_here
 ```
 
 ### Development vs Production
+
 - **Development**: Uses memory storage fallback if database is unavailable
 - **Production**: Requires PostgreSQL database for data persistence
 
-
 ### 🚀 Deployment
 
-You can deploy SolarScope AI easily using [Render](https://render.com) or any cloud platform that supports Node.js and PostgreSQL.
-- **Build Command**: npm install && npm run build
-- **Pre-Deploy Command**: npm run db:push
-- **Start Command**: node start-production.js
+You can deploy SolarScope AI on [Vercel](https://vercel.com) or any cloud platform that supports Node.js and PostgreSQL.
 
+1. **Build the project**
+
+   ```bash
+   npm run build
+   ```
+
+2. **Push database schema**
+
+   ```bash
+   npm run db:push
+   ```
+
+3. **Set environment variables** on your hosting platform:
+   - `NODE_ENV=production`
+   - `DATABASE_URL=your_postgresql_connection_string`
+   - `GOOGLE_API_KEY=your_google_gemini_api_key`
+   - `SESSION_SECRET=your_session_secret`
+
+4. **Start the server**
+   ```bash
+   npm start
+   ```
 
 ## Performance Optimization
 
 ### Image Processing
+
 - **Compression**: Automatic image compression (1200px max width, 80% quality)
 - **Storage**: Efficient sessionStorage usage with cleanup routines
 - **Caching**: React Query caching for API responses
 
 ### Database Optimization
+
 - **Connection Pooling**: PostgreSQL connection pool management
 - **Query Optimization**: Efficient Drizzle ORM queries
 - **Session Management**: PostgreSQL session store for scalability
 
 ### AI Service Optimization
+
 - **Rate Limiting**: Intelligent request throttling
 - **Error Handling**: Robust error recovery and retry logic
 - **Response Caching**: Strategic caching for repeated requests
@@ -244,6 +288,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Support
 
 For support and questions:
+
 - Check the documentation above
 - Review the code comments for implementation details
 - Ensure all environment variables are properly configured
@@ -252,17 +297,20 @@ For support and questions:
 ## Technical Details
 
 ### AI Integration
+
 - **Google Gemini 2.0 Flash**: Latest AI model for image analysis
 - **Content Validation**: AI-powered image classification
 - **Structured Responses**: JSON-formatted AI responses for consistency
 
 ### Security Measures
+
 - **Password Hashing**: bcrypt with salt rounds
 - **Session Security**: Secure session cookies with PostgreSQL store
 - **Input Validation**: Comprehensive request validation with Zod
 - **File Upload Security**: Size limits and MIME type validation
 
 ### Performance Metrics
+
 - **Build Time**: ~2 seconds for frontend, ~35ms for backend
 - **Bundle Size**: Optimized with code splitting and tree shaking
 - **API Response**: Average 2-4 seconds for AI analysis
