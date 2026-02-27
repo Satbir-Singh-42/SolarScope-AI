@@ -21,7 +21,10 @@ async function hashPassword(password: string): Promise<string> {
   return `${buf.toString("hex")}.${salt}`;
 }
 
-async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
+async function comparePasswords(
+  supplied: string,
+  stored: string,
+): Promise<boolean> {
   try {
     const [hashed, salt] = stored.split(".");
     if (!salt) {
@@ -72,8 +75,8 @@ export function setupAuth(app: Express) {
         } catch (error) {
           return done(error);
         }
-      }
-    )
+      },
+    ),
   );
 
   passport.serializeUser((user, done) => done(null, user.id));
@@ -86,7 +89,7 @@ export function setupAuth(app: Express) {
       }
       done(null, user);
     } catch (error) {
-      console.error('User deserialization error:', error);
+      console.error("User deserialization error:", error);
       // Return null to clear invalid session
       done(null, null);
     }
@@ -118,9 +121,9 @@ export function setupAuth(app: Express) {
       // Auto-login after registration
       req.login(user, (err) => {
         if (err) return next(err);
-        res.status(201).json({ 
-          success: true, 
-          user: { id: user.id, username: user.username, email: user.email } 
+        res.status(201).json({
+          success: true,
+          user: { id: user.id, username: user.username, email: user.email },
         });
       });
     } catch (error) {
@@ -131,25 +134,25 @@ export function setupAuth(app: Express) {
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
     const user = req.user as SelectUser;
-    res.status(200).json({ 
-      success: true, 
-      user: { id: user.id, username: user.username, email: user.email } 
+    res.status(200).json({
+      success: true,
+      user: { id: user.id, username: user.username, email: user.email },
     });
   });
 
   app.post("/api/logout", (req, res, next) => {
     req.logout((err) => {
       if (err) return next(err);
-      
+
       // Destroy the session completely
       req.session.destroy((err) => {
         if (err) {
           console.error("Session destruction error:", err);
           return next(err);
         }
-        
+
         // Clear the session cookie
-        res.clearCookie('connect.sid');
+        res.clearCookie("connect.sid");
         res.status(200).json({ success: true });
       });
     });
@@ -159,11 +162,11 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-    
+
     const user = req.user as SelectUser;
-    res.json({ 
-      success: true, 
-      user: { id: user.id, username: user.username, email: user.email } 
+    res.json({
+      success: true,
+      user: { id: user.id, username: user.username, email: user.email },
     });
   });
 }
