@@ -1,7 +1,7 @@
 import express from "express";
-import { registerRoutes } from "../server/routes";
-import { initializeDatabase } from "../server/db";
-import { storage } from "../server/storage";
+import { registerRoutes } from "./routes";
+import { initializeDatabase } from "./db";
+import { storage } from "./storage";
 import dotenv from "dotenv";
 
 dotenv.config();
