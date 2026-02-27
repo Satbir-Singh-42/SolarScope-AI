@@ -1,3 +1,12 @@
+/**
+ * Vercel Serverless Function Entry Point
+ *
+ * This file is the esbuild entry point. During `npm run build`,
+ * esbuild bundles this + all server code into `api/index.mjs`.
+ * Vercel auto-detects `api/index.mjs` as a serverless function.
+ *
+ * DO NOT import this file directly — it's only used by the build.
+ */
 import express from "express";
 import { registerRoutes } from "../server/routes";
 import { initializeDatabase } from "../server/db";
