@@ -5,7 +5,7 @@ import path from "path";
 import * as fs from "fs";
 import * as os from "os";
 import { storage } from "./storage";
-import { users, analyses, chatMessages } from "../shared/schema";
+import { users, analyses, chatMessages } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { analyzeInstallationWithAI, analyzeFaultsWithAI } from "./ai-service";
 import { setupAuth } from "./auth";
@@ -138,11 +138,7 @@ const upload = multer({
   },
 });
 
-/**
- * Register only the API routes on the Express app.
- * Used by both local dev server and Vercel serverless function.
- */
-export function registerApiRoutes(app: Express): void {
+export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware
   setupAuth(app);
 
@@ -280,7 +276,7 @@ export function registerApiRoutes(app: Express): void {
           );
         } else {
           const { db } = await import("./db");
-          const { users } = await import("../shared/schema");
+          const { users } = await import("@shared/schema");
           const { eq } = await import("drizzle-orm");
 
           await db
@@ -848,13 +844,6 @@ export function registerApiRoutes(app: Express): void {
     }
   });
 
-}
-
-/**
- * Register routes AND create an HTTP server (for local dev only).
- */
-export async function registerRoutes(app: Express): Promise<Server> {
-  registerApiRoutes(app);
   const httpServer = createServer(app);
   return httpServer;
 }

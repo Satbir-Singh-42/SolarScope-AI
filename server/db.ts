@@ -1,6 +1,7 @@
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
-import * as schema from "../shared/schema";
+import ws from "ws";
+import * as schema from "@shared/schema";
 
 // Initialize database if DATABASE_URL is provided
 let db: any = null;
@@ -23,13 +24,7 @@ async function initializeDatabase() {
   if (databaseUrl) {
     console.log("Using DATABASE_URL:", databaseUrl.substring(0, 50) + "...");
     try {
-      // Use native WebSocket if available (Vercel serverless), otherwise use ws package
-      if (typeof WebSocket !== "undefined") {
-        neonConfig.webSocketConstructor = WebSocket as any;
-      } else {
-        const ws = (await import("ws")).default;
-        neonConfig.webSocketConstructor = ws;
-      }
+      neonConfig.webSocketConstructor = ws;
       pool = new Pool({ connectionString: databaseUrl });
       db = drizzle({ client: pool, schema });
 
